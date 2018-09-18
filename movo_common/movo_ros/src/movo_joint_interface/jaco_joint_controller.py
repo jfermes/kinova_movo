@@ -37,7 +37,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 from ctypes import *
 import rospy
 from movo_msgs.msg import JacoCartesianVelocityCmd,KinovaActuatorFdbk,JointTorque
-from movo_msgs.srv import SetTorqueControlMode
+from movo_msgs.srv import SetTorqueControlMode, SwitchTrajectoryTorque, SafetyFactor, TorqueActuatorDamping
 from sensor_msgs.msg import JointState
 from control_msgs.msg import JointTrajectoryControllerState
 from std_msgs.msg import Float32
@@ -184,7 +184,16 @@ class SIArmController(object):
         """
 
         self._gravity_srv = rospy.Service('/movo/%s_arm/set_gravity'%self._prefix, QueryTrajectoryState, self._set_gravity_srv)
-        self._mode_srv = rospy.Service('/movo/set_control_mode', SetTorqueControlMode, self._set_control_mode_srv)
+        #0: Angular, 1: Cartesian, 2: Torque
+        self._mode_srv = rospy.Service('/movo/set_control_mode', SetTorqueControlMode, self._set_control_mode_srv) 
+        #0: Position, 1: Torque
+        self._control_type_srv = rospy.Service('/movo/switch_trajectory_torque', SwitchTrajectoryTorque, self._switch_trajectory_troque_srv)
+        self._safety_factor_srv = rospy.Service('/movo/set_safety_factor', SafetyFactor, self._set_safety_factor_srv)
+        self._damping_srv = rospy.Service('/movo/set_torque_actuator_damping', TorqueActuatorDamping, self._set_torque_actuator_damping_srv)
+
+
+        
+
 
         """
         Register subscribers for torque control
@@ -262,7 +271,38 @@ class SIArmController(object):
     Declare the services to set the gravity vector, switch to torque control, ...
     """
 
-    #def change_gravity_vector():
+    def _set_gravity_srv(req):
+        print "Setting gravity vector to [%s , %s, %s]"%(req.x, req.y, req.z)
+        self.api.set_gravity_vector([req.x, req.y, req.z])
+
+
+    def _set_control_mode_srv(req):
+        if(req.state < 0 or req.state > 2):
+            print "Control mode must be between 0 and 2"
+            return
+        else:
+            print "Control mode set to %s"%(req.state)
+            self.api.set_control_mode(req.state)
+
+
+    def _switch_trajectory_troque_srv(req):
+        if(req.state < 0 or req.state > 1):
+            print "0: Trajectory, 1: Torque"
+            return
+        else:
+            self.api.switch_trajectory_torque(req.state)
+
+    def _set_safety_factor_srv(req):
+        if(req.factor < 0 or re.factor > 1):
+            print "Safety factor must be between 0 and 1"
+            return
+        else:
+            self.api.set_torque_safety_factor(req.factor)
+
+    def _set_torque_actuator_damping_srv(req):
+        print "Setting actuator damping to [%s , %s, %s, %s , %s, %s]"%(req.j1, req.j2, req.j3, req.j4, req.j5, req.j6)
+        self.api.set_torque_actuator_damping([req.j1, req.j2, req.j3, req.j4, req.j5, req.j6])
+
 
     def _set_angular_torque(self, cmd):
         self.api.send_angular_torque_command([cmd.joint1, cmd.joint2, cmd.joint3, cmd.joint4, cmd.joint5, cmd.joint6])

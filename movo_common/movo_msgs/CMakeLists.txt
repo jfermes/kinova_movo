@@ -29,7 +29,11 @@ add_message_files(DIRECTORY msg FILES
 
 add_service_files(
  FILES
- SetTorqueControlMode.srv)
+ SetTorqueControlMode.srv
+ GravityVector.srv
+ SwitchTrajectoryTorque.srv
+ SafetyFactor.srv
+ TorqueActuatorDamping.srv)
 
 generate_messages(DEPENDENCIES std_msgs geometry_msgs)
 catkin_package(CATKIN_DEPENDS message_runtime std_msgs geometry_msgs)

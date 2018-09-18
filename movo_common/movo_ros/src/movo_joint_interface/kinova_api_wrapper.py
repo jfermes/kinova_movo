@@ -161,7 +161,7 @@ TELEOP_CONTROL       = 1
 TORQUE_CONTROL		 = 2
 
 from enum import Enum
-class GENERALCONTROL_TYPE(Enum):
+class GENERAL_CONTROL_TYPE(Enum):
 	POSITION = 0
 	TORQUE = 1
 
@@ -212,13 +212,13 @@ class KinovaAPI(object):
         self.SetGravityVector  = self.kinova.Ethernet_SetGravityVector  #will call the function SetGravityVector from the Kinova C++ API using Ethernet connectivity
     	self.SetGravityVector.arg_types = [POINTER( c_float)]  #this function takes a table of float as an argument
         self.SwitchTrajectoryTorque   = self.kinova.Ethernet_SwitchTrajectoryTorque   #will call the function SwitchTrajectoryTorque from the Kinova C++ API using Ethernet connectivity.
-        self.SwitchTrajectoryTorque.arg_types = [GENERALCONTROL_TYPE]
+        self.SwitchTrajectoryTorque.arg_types = [GENERAL_CONTROL_TYPE]
         self.SendAngularTorqueCommand = self.kinova.Ethernet_SetAngularTorqueCommand
         self.SendAngularTorqueCommand.arg_types = [POINTER( c_float)]
         self.SetTorqueSafetyFactor = self.kinova.Ethernet_SetTorqueSafetyFactor
         self.SetTorqueSafetyFactor.argtypes = [c_float]
-        self.SetTorqueActuatorDamping = self.kinova.Ethernet_ SetTorqueActuatorDamping
-        self.SetTorqueActuatorDamping.arg_types = [PONITER(c_float)]
+        self.SetTorqueActuatorDamping = self.kinova.Ethernet_SetTorqueActuatorDamping
+        self.SetTorqueActuatorDamping.arg_types = [POINTER(c_float)]
 
 
         rospy.loginfo("INFO: Using API wrapper")
