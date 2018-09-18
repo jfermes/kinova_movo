@@ -274,6 +274,7 @@ class SIArmController(object):
     def _set_gravity_srv(req):
         print "Setting gravity vector to [%s , %s, %s]"%(req.x, req.y, req.z)
         self.api.set_gravity_vector([req.x, req.y, req.z])
+        return
 
 
     def _set_control_mode_srv(req):
@@ -283,6 +284,7 @@ class SIArmController(object):
         else:
             print "Control mode set to %s"%(req.state)
             self.api.set_control_mode(req.state)
+        return
 
 
     def _switch_trajectory_troque_srv(req):
@@ -291,6 +293,7 @@ class SIArmController(object):
             return
         else:
             self.api.switch_trajectory_torque(req.state)
+        return
 
     def _set_safety_factor_srv(req):
         if(req.factor < 0 or re.factor > 1):
@@ -298,17 +301,16 @@ class SIArmController(object):
             return
         else:
             self.api.set_torque_safety_factor(req.factor)
+        return
 
     def _set_torque_actuator_damping_srv(req):
         print "Setting actuator damping to [%s , %s, %s, %s , %s, %s]"%(req.j1, req.j2, req.j3, req.j4, req.j5, req.j6)
         self.api.set_torque_actuator_damping([req.j1, req.j2, req.j3, req.j4, req.j5, req.j6])
+        return
 
 
     def _set_angular_torque(self, cmd):
         self.api.send_angular_torque_command([cmd.joint1, cmd.joint2, cmd.joint3, cmd.joint4, cmd.joint5, cmd.joint6])
-
-
-
 
         
     def _init_ext_joint_position_control(self):    
