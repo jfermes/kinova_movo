@@ -165,6 +165,15 @@ class GENERAL_CONTROL_TYPE(Enum):
 	POSITION = 0
 	TORQUE = 1
 
+from enum import Enum
+class ACTUATOR_ADDRESS(Enum):
+	A1 = 16
+	A2 = 17
+	A3 = 18
+	A4 = 19
+	A5 = 20
+	A6 = 21	
+
 
 class KinovaAPI(object):
     def __init__(self, prefix, interface='eth0', robotIpAddress="10.66.171.15", subnetMask="255.255.255.0", localCmdport = 24000,localBcastPort = 24024,robotPort = 44000, dof="6dof"):
@@ -216,9 +225,11 @@ class KinovaAPI(object):
         self.SendAngularTorqueCommand = self.kinova.Ethernet_SetAngularTorqueCommand
         self.SendAngularTorqueCommand.arg_types = [POINTER( c_float)]
         self.SetTorqueSafetyFactor = self.kinova.Ethernet_SetTorqueSafetyFactor
-        self.SetTorqueSafetyFactor.argtypes = [c_float]
+        self.SetTorqueSafetyFactor.arg_types = c_float
         self.SetTorqueActuatorDamping = self.kinova.Ethernet_SetTorqueActuatorDamping
         self.SetTorqueActuatorDamping.arg_types = [POINTER(c_float)]
+        self.SetTorqueZero = self.kinova.Ethernet_SetTorqueZero
+        self.SetTorqueZero.arg_types = c_int 
 
 
         rospy.loginfo("INFO: Using API wrapper")
@@ -370,8 +381,14 @@ class KinovaAPI(object):
 
     def set_gravity_vector(self, gravityVector):
     	self.SetGravityVector(gravityVector)
-    	rospy.loginfo("INFO: Gravity vector has been changed")	
+    	rospy.loginfo("INFO: Gravity vector has been changed")
 
+    def set_torque_zero(self, ActuatorAddress):
+    	if(ActuatorAddress != A1 or ActuatorAddress != A2 or ActuatorAddress != A3 or ActuatorAddress != A4 or ActuatorAddress != A5 or ActuatorAddress != A6):
+    		print "Actuator Address does not correspond with any valid actuator"
+    		return
+    	else:
+    		self.SetTorqueZero(ActuatorAddress)
 
     def send_angular_torque_command(self, cmds):
     	commandVectorArray = c_float * TORQUE_COMMAND_SIZE

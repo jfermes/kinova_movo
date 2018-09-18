@@ -37,7 +37,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 from ctypes import *
 import rospy
 from movo_msgs.msg import JacoCartesianVelocityCmd,KinovaActuatorFdbk,JointTorque
-from movo_msgs.srv import SetTorqueControlMode, SwitchTrajectoryTorque, SafetyFactor, TorqueActuatorDamping
+from movo_msgs.srv import SetTorqueControlMode, SwitchTrajectoryTorque, SafetyFactor, TorqueActuatorDamping, TorqueZero
 from sensor_msgs.msg import JointState
 from control_msgs.msg import JointTrajectoryControllerState
 from std_msgs.msg import Float32
@@ -190,6 +190,7 @@ class SIArmController(object):
         self._control_type_srv = rospy.Service('/movo/switch_trajectory_torque', SwitchTrajectoryTorque, self._switch_trajectory_troque_srv)
         self._safety_factor_srv = rospy.Service('/movo/set_safety_factor', SafetyFactor, self._set_safety_factor_srv)
         self._damping_srv = rospy.Service('/movo/set_torque_actuator_damping', TorqueActuatorDamping, self._set_torque_actuator_damping_srv)
+        self._torque_zero_srv = rospy.Service('/movo/set_torque_zero', TorqueZero, self._set_torque_zero_srv)
 
 
         
@@ -308,6 +309,9 @@ class SIArmController(object):
         self.api.set_torque_actuator_damping([req.j1, req.j2, req.j3, req.j4, req.j5, req.j6])
         return
 
+    def _set_torque_zero_srv(req):
+        self.api.set_torque_zero(req.actuator)    
+
 
     def _set_angular_torque(self, cmd):
         self.api.send_angular_torque_command([cmd.joint1, cmd.joint2, cmd.joint3, cmd.joint4, cmd.joint5, cmd.joint6])
@@ -350,6 +354,7 @@ class SIArmController(object):
                 self.api.set_control_mode(TELEOP_CONTROL)
                 self._ctl_mode = TELEOP_CONTROL
             self.last_teleop_cmd_update = rospy.get_time()
+            
             
     def _update_teleop_gripper_cmd(self,cmd):
         self._gripper_cmd = cmd.data

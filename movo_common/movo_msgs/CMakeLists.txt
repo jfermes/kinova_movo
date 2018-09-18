@@ -33,7 +33,8 @@ add_service_files(
  GravityVector.srv
  SwitchTrajectoryTorque.srv
  SafetyFactor.srv
- TorqueActuatorDamping.srv)
+ TorqueActuatorDamping.srv
+ TorqueZero.srv)
 
 generate_messages(DEPENDENCIES std_msgs geometry_msgs)
 catkin_package(CATKIN_DEPENDS message_runtime std_msgs geometry_msgs)
