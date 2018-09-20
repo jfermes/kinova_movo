@@ -222,7 +222,7 @@ class KinovaAPI(object):
     	self.SetGravityVector.arg_types = [POINTER( c_float)]  #this function takes a table of float as an argument
         self.SwitchTrajectoryTorque   = self.kinova.Ethernet_SwitchTrajectoryTorque   #will call the function SwitchTrajectoryTorque from the Kinova C++ API using Ethernet connectivity.
         self.SwitchTrajectoryTorque.arg_types = [GENERAL_CONTROL_TYPE]
-        self.SendAngularTorqueCommand = self.kinova.Ethernet_SetAngularTorqueCommand
+        self.SendAngularTorqueCommand = self.kinova.Ethernet_SendAngularTorqueCommand
         self.SendAngularTorqueCommand.arg_types = [POINTER( c_float)]
         self.SetTorqueSafetyFactor = self.kinova.Ethernet_SetTorqueSafetyFactor
         self.SetTorqueSafetyFactor.arg_types = c_float
