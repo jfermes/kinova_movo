@@ -172,7 +172,7 @@ class ACTUATOR_ADDRESS(Enum):
 	A3 = 18
 	A4 = 19
 	A5 = 20
-	A6 = 21	
+	A6 = 21		
 
 
 class KinovaAPI(object):
@@ -221,7 +221,7 @@ class KinovaAPI(object):
         self.SetGravityVector  = self.kinova.Ethernet_SetGravityVector  #will call the function SetGravityVector from the Kinova C++ API using Ethernet connectivity
     	self.SetGravityVector.arg_types = [POINTER( c_float)]  #this function takes a table of float as an argument
         self.SwitchTrajectoryTorque   = self.kinova.Ethernet_SwitchTrajectoryTorque   #will call the function SwitchTrajectoryTorque from the Kinova C++ API using Ethernet connectivity.
-        self.SwitchTrajectoryTorque.arg_types = [GENERAL_CONTROL_TYPE]
+        self.SwitchTrajectoryTorque.arg_types = GENERAL_CONTROL_TYPE
         self.SendAngularTorqueCommand = self.kinova.Ethernet_SendAngularTorqueCommand
         self.SendAngularTorqueCommand.arg_types = [POINTER( c_float)]
         self.SetTorqueSafetyFactor = self.kinova.Ethernet_SetTorqueSafetyFactor
@@ -299,7 +299,7 @@ class KinovaAPI(object):
         	gravityVectorArray = c_float * 3
         	gravityVector = gravityVectorArray(0.0, -9.81, 0.0)
         	self.SetGravityVector(byref(gravityVector)) #Set the gravity vector
-        	self.SwitchTrajectoryTorque(TORQUE) #Switch to torque control
+        	self.SwitchTrajectoryTorque(GENERAL_CONTROL_TYPE.TORQUE) #Switch to torque control
 
     def set_torque_safety_factor(self, factor):
     	self.SetTorqueSafetyFactor(factor)
@@ -371,8 +371,8 @@ class KinovaAPI(object):
         self.SendAdvanceTrajectory(self._cart_cmd)
 
     def switch_trajectory_torque(self, mode):
-    	if (POSITION == mode):
-    		self.SwitchTrajectoryTorque(POSITION)
+    	if (GENERAL_CONTROL_TYPE.POSITION == mode):
+    		self.SwitchTrajectoryTorque(GENERAL_CONTROL_TYPE.POSITION)
     		rospy.loginfo("INFO: Switch to Trajectory Control")	
     	else:
     		self.SwitchTrajectoryTorque(TORQUE)
@@ -384,7 +384,7 @@ class KinovaAPI(object):
     	rospy.loginfo("INFO: Gravity vector has been changed")
 
     def set_torque_zero(self, ActuatorAddress):
-    	if(ActuatorAddress != A1 or ActuatorAddress != A2 or ActuatorAddress != A3 or ActuatorAddress != A4 or ActuatorAddress != A5 or ActuatorAddress != A6):
+    	if(ActuatorAddress != ACTUATOR_ADDRESS.A1 or ActuatorAddress != ACTUATOR_ADDRESS.A2 or ActuatorAddress != ACTUATOR_ADDRESS.A3 or ActuatorAddress != ACTUATOR_ADDRESS.A4 or ActuatorAddress != ACTUATOR_ADDRESS.A5 or ActuatorAddress != ACTUATOR_ADDRESS.A6):
     		print "Actuator Address does not correspond with any valid actuator"
     		return
     	else:
@@ -393,12 +393,12 @@ class KinovaAPI(object):
     def send_angular_torque_command(self, cmds):
     	commandVectorArray = c_float * TORQUE_COMMAND_SIZE
         torqueCommand = commandVectorArray(0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
-        torqueCommand = cmds[0]
-        torqueCommand = cmds[1]
-        torqueCommand = cmds[2]
-        torqueCommand = cmds[3]
-        torqueCommand = cmds[4]
-        torqueCommand = cmds[5]
+        torqueCommand[0] = cmds[0]
+        torqueCommand[1] = cmds[1]
+        torqueCommand[2] = cmds[2]
+        torqueCommand[3] = cmds[3]
+        torqueCommand[4] = cmds[4]
+        torqueCommand[5] = cmds[5]
         self.SendAngularTorqueCommand(torqueCommand)
     
     def get_angular_position(self):

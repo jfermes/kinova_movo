@@ -37,7 +37,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 from ctypes import *
 import rospy
 from movo_msgs.msg import JacoCartesianVelocityCmd,KinovaActuatorFdbk,JointTorque
-from movo_msgs.srv import SetTorqueControlMode, SwitchTrajectoryTorque, SafetyFactor, TorqueActuatorDamping, TorqueZero
+from movo_msgs.srv import GravityVector, SetTorqueControlMode, SwitchTrajectoryTorque, SafetyFactor, TorqueActuatorDamping, TorqueZero
 from sensor_msgs.msg import JointState
 from control_msgs.msg import JointTrajectoryControllerState
 from std_msgs.msg import Float32
@@ -183,7 +183,7 @@ class SIArmController(object):
         Register the services for torque control
         """
 
-        self._gravity_srv = rospy.Service('/movo/%s_arm/set_gravity'%self._prefix, QueryTrajectoryState, self._set_gravity_srv)
+        self._gravity_srv = rospy.Service('/movo/%s_arm/set_gravity'%self._prefix, GravityVector, self._set_gravity_srv)
         #0: Angular, 1: Cartesian, 2: Torque
         self._mode_srv = rospy.Service('/movo/set_control_mode', SetTorqueControlMode, self._set_control_mode_srv) 
         #0: Position, 1: Torque
@@ -272,13 +272,15 @@ class SIArmController(object):
     Declare the services to set the gravity vector, switch to torque control, ...
     """
 
-    def _set_gravity_srv(req):
-        print "Setting gravity vector to [%s , %s, %s]"%(req.x, req.y, req.z)
-        self.api.set_gravity_vector([req.x, req.y, req.z])
+    def _set_gravity_srv(self, req):
+        #print "Setting gravity vector to [%s , %s, %s]"%(req.x, req.y, req.z)
+        gravityVectorArray = c_float * 3
+        gravityVector = gravityVectorArray(req.x, req.y, req.z)
+        self.api.set_gravity_vector(gravityVector)
         return
 
 
-    def _set_control_mode_srv(req):
+    def _set_control_mode_srv(self, req):
         if(req.state < 0 or req.state > 2):
             print "Control mode must be between 0 and 2"
             return
@@ -288,7 +290,7 @@ class SIArmController(object):
         return
 
 
-    def _switch_trajectory_troque_srv(req):
+    def _switch_trajectory_troque_srv(self, req):
         if(req.state < 0 or req.state > 1):
             print "0: Trajectory, 1: Torque"
             return
@@ -296,25 +298,35 @@ class SIArmController(object):
             self.api.switch_trajectory_torque(req.state)
         return
 
-    def _set_safety_factor_srv(req):
-        if(req.factor < 0 or re.factor > 1):
+    def _set_safety_factor_srv(self, req):
+        if(req.factor < 0 or req.factor > 1):
             print "Safety factor must be between 0 and 1"
             return
         else:
             self.api.set_torque_safety_factor(req.factor)
         return
 
-    def _set_torque_actuator_damping_srv(req):
-        print "Setting actuator damping to [%s , %s, %s, %s , %s, %s]"%(req.j1, req.j2, req.j3, req.j4, req.j5, req.j6)
-        self.api.set_torque_actuator_damping([req.j1, req.j2, req.j3, req.j4, req.j5, req.j6])
+    def _set_torque_actuator_damping_srv(self, req):
+        #print "Setting actuator damping to [%s , %s, %s, %s , %s, %s]"%(req.j1, req.j2, req.j3, req.j4, req.j5, req.j6)
+        torqueDampingArray = c_float * 6
+        torqueDamping = torqueDampingArray(req.j1, req.j2, req.j3, req.j4, req.j5, req.j6)
+        self.api.set_torque_actuator_damping(torqueDamping)
         return
 
-    def _set_torque_zero_srv(req):
+    def _set_torque_zero_srv(self, req):
         self.api.set_torque_zero(req.actuator)    
 
 
     def _set_angular_torque(self, cmd):
-        self.api.send_angular_torque_command([cmd.joint1, cmd.joint2, cmd.joint3, cmd.joint4, cmd.joint5, cmd.joint6])
+        commandVectorArray = c_float * TORQUE_COMMAND_SIZE
+        torqueCommand = commandVectorArray(0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
+        torqueCommand[0] = cmd.joint1
+        torqueCommand[1] = cmd.joint2
+        torqueCommand[2] = cmd.joint3
+        torqueCommand[3] = cmd.joint4
+        torqueCommand[4] = cmd.joint5
+        torqueCommand[5] = cmd.joint6
+        self.api.send_angular_torque_command(torqueCommand)
 
         
     def _init_ext_joint_position_control(self):    
