@@ -221,15 +221,17 @@ class KinovaAPI(object):
         self.SetGravityVector  = self.kinova.Ethernet_SetGravityVector  #will call the function SetGravityVector from the Kinova C++ API using Ethernet connectivity
     	self.SetGravityVector.arg_types = [POINTER( c_float)]  #this function takes a table of float as an argument
         self.SwitchTrajectoryTorque   = self.kinova.Ethernet_SwitchTrajectoryTorque   #will call the function SwitchTrajectoryTorque from the Kinova C++ API using Ethernet connectivity.
-        self.SwitchTrajectoryTorque.arg_types = GENERAL_CONTROL_TYPE
+        self.SwitchTrajectoryTorque.arg_types = [GENERAL_CONTROL_TYPE]
         self.SendAngularTorqueCommand = self.kinova.Ethernet_SendAngularTorqueCommand
         self.SendAngularTorqueCommand.arg_types = [POINTER( c_float)]
         self.SetTorqueSafetyFactor = self.kinova.Ethernet_SetTorqueSafetyFactor
-        self.SetTorqueSafetyFactor.arg_types = c_float
+        self.SetTorqueSafetyFactor.arg_types = [c_float]
         self.SetTorqueActuatorDamping = self.kinova.Ethernet_SetTorqueActuatorDamping
         self.SetTorqueActuatorDamping.arg_types = [POINTER(c_float)]
         self.SetTorqueZero = self.kinova.Ethernet_SetTorqueZero
-        self.SetTorqueZero.arg_types = c_int 
+        self.SetTorqueZero.arg_types = [c_int]
+
+        #argtypes or arg_types?
 
 
         rospy.loginfo("INFO: Using API wrapper")
@@ -375,7 +377,7 @@ class KinovaAPI(object):
     		self.SwitchTrajectoryTorque(GENERAL_CONTROL_TYPE.POSITION)
     		rospy.loginfo("INFO: Switch to Trajectory Control")	
     	else:
-    		self.SwitchTrajectoryTorque(TORQUE)
+    		self.SwitchTrajectoryTorque(GENERAL_CONTROL_TYPE.TORQUE)
     		rospy.loginfo("INFO: Switch to Torque Control")	
 
 
