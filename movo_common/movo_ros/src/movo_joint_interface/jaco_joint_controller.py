@@ -37,7 +37,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 from ctypes import *
 import rospy
 from movo_msgs.msg import JacoCartesianVelocityCmd,KinovaActuatorFdbk,JointTorque
-from movo_msgs.srv import GravityVector, SetTorqueControlMode, SwitchTrajectoryTorque, SafetyFactor, TorqueActuatorDamping, TorqueZero, GravityVectorResponse, SetTorqueControlModeResponse, SwitchTrajectoryTorqueResponse, SafetyFactorResponse, TorqueActuatorDampingResponse, TorqueZeroResponse
+from movo_msgs.srv import GravityVector, SetTorqueControlMode, SwitchTrajectoryTorque, SafetyFactor, TorqueActuatorDamping, TorqueZero, MaxTorque, GravityVectorResponse, SetTorqueControlModeResponse, SwitchTrajectoryTorqueResponse, SafetyFactorResponse, TorqueActuatorDampingResponse, TorqueZeroResponse, MaxTorqueResponse
 from sensor_msgs.msg import JointState
 from control_msgs.msg import JointTrajectoryControllerState
 from std_msgs.msg import Float32
@@ -191,6 +191,7 @@ class SIArmController(object):
         self._safety_factor_srv = rospy.Service('/movo/set_safety_factor', SafetyFactor, self._set_safety_factor_srv)
         self._damping_srv = rospy.Service('/movo/set_torque_actuator_damping', TorqueActuatorDamping, self._set_torque_actuator_damping_srv)
         self._torque_zero_srv = rospy.Service('/movo/set_torque_zero', TorqueZero, self._set_torque_zero_srv)
+        self._torque_max_srv = rospy.Service('/movo/set_max_torque', MaxTorque, self._set_max_torque_srv)
 
 
         
@@ -316,6 +317,12 @@ class SIArmController(object):
     def _set_torque_zero_srv(self, req):
         self.api.set_torque_zero(req.actuator)   
         return TorqueZeroResponse() 
+
+    def _set_max_torque_srv(self, req):
+        torqueMaxArray = c_float * 6
+        torqueMax = torqueMaxArray(req.j1, req.j2, req.j3, req.j4, req.j5, req.j6)
+        self.api.set_torque_command_max(torqueMax)
+        return MaxTorqueResponse()
 
 
     def _set_angular_torque(self, cmd):

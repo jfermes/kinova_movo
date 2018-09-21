@@ -34,7 +34,8 @@ add_service_files(
  SwitchTrajectoryTorque.srv
  SafetyFactor.srv
  TorqueActuatorDamping.srv
- TorqueZero.srv)
+ TorqueZero.srv
+ MaxTorque.srv)
 
 generate_messages(DEPENDENCIES std_msgs geometry_msgs)
 catkin_package(CATKIN_DEPENDS message_runtime std_msgs geometry_msgs)

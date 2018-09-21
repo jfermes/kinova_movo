@@ -230,6 +230,8 @@ class KinovaAPI(object):
         self.SetTorqueActuatorDamping.arg_types = [POINTER(c_float)]
         self.SetTorqueZero = self.kinova.Ethernet_SetTorqueZero
         self.SetTorqueZero.arg_types = [c_int]
+        self.SetTorqueCommandMax = self.kinova.Ethernet_SetTorqueCommandMax
+        self.SetTorqueCommandMax.arg_types = [POINTER(c_float)]
 
         #argtypes or arg_types?
 
@@ -378,7 +380,18 @@ class KinovaAPI(object):
     		rospy.loginfo("INFO: Switch to Trajectory Control")	
     	else:
     		self.SwitchTrajectoryTorque(GENERAL_CONTROL_TYPE.TORQUE)
-    		rospy.loginfo("INFO: Switch to Torque Control")	
+    		rospy.loginfo("INFO: Switch to Torque Control")
+
+    def set_torque_command_max(sef, cmd):
+    	torqueCommandMaxArray = c_float * TORQUE_COMMAND_SIZE
+    	torqueMaxCommand = torqueCommandMaxArray(0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
+    	torqueMaxCommand[0] = cmds[0]
+        torqueMaxCommand[1] = cmds[1]
+        torqueMaxCommand[2] = cmds[2]
+        torqueMaxCommand[3] = cmds[3]
+        torqueMaxCommand[4] = cmds[4]
+        torqueMaxCommand[5] = cmds[5]
+        self.torqueMaxCommand(torqueMaxCommand)
 
 
     def set_gravity_vector(self, gravityVector):
