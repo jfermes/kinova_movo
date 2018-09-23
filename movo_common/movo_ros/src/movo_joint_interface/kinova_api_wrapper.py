@@ -161,7 +161,7 @@ TELEOP_CONTROL       = 1
 TORQUE_CONTROL		 = 2
 
 from enum import Enum
-class GENERAL_CONTROL_TYPE(Enum):
+class GENERALCONTROL_TYPE(Enum):
 	POSITION = 0
 	TORQUE = 1
 
@@ -221,7 +221,7 @@ class KinovaAPI(object):
         self.SetGravityVector  = self.kinova.Ethernet_SetGravityVector  #will call the function SetGravityVector from the Kinova C++ API using Ethernet connectivity
     	self.SetGravityVector.arg_types = [POINTER( c_float)]  #this function takes a table of float as an argument
         self.SwitchTrajectoryTorque   = self.kinova.Ethernet_SwitchTrajectoryTorque   #will call the function SwitchTrajectoryTorque from the Kinova C++ API using Ethernet connectivity.
-        self.SwitchTrajectoryTorque.arg_types = [GENERAL_CONTROL_TYPE]
+        self.SwitchTrajectoryTorque.arg_types = [GENERALCONTROL_TYPE]
         self.SendAngularTorqueCommand = self.kinova.Ethernet_SendAngularTorqueCommand
         self.SendAngularTorqueCommand.arg_types = [POINTER( c_float)]
         self.SetTorqueSafetyFactor = self.kinova.Ethernet_SetTorqueSafetyFactor
@@ -303,7 +303,7 @@ class KinovaAPI(object):
         	gravityVectorArray = c_float * 3
         	gravityVector = gravityVectorArray(0.0, -9.81, 0.0)
         	self.SetGravityVector(byref(gravityVector)) #Set the gravity vector
-        	self.SwitchTrajectoryTorque(GENERAL_CONTROL_TYPE.TORQUE) #Switch to torque control
+        	self.SwitchTrajectoryTorque(GENERALCONTROL_TYPE.TORQUE.value) #Switch to torque control
 
     def set_torque_safety_factor(self, factor):
     	self.SetTorqueSafetyFactor(factor)
@@ -375,11 +375,11 @@ class KinovaAPI(object):
         self.SendAdvanceTrajectory(self._cart_cmd)
 
     def switch_trajectory_torque(self, mode):
-    	if (GENERAL_CONTROL_TYPE.POSITION == mode):
-    		self.SwitchTrajectoryTorque(GENERAL_CONTROL_TYPE.POSITION)
+    	if (GENERALCONTROL_TYPE.POSITION.value == mode):
+    		self.SwitchTrajectoryTorque(GENERALCONTROL_TYPE.POSITION.value)
     		rospy.loginfo("INFO: Switch to Trajectory Control")	
     	else:
-    		self.SwitchTrajectoryTorque(GENERAL_CONTROL_TYPE.TORQUE)
+    		self.SwitchTrajectoryTorque(GENERALCONTROL_TYPE.TORQUE.value)
     		rospy.loginfo("INFO: Switch to Torque Control")
 
     def set_torque_command_max(sef, cmd):

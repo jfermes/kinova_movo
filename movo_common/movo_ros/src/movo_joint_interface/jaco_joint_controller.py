@@ -325,15 +325,16 @@ class SIArmController(object):
         return MaxTorqueResponse()
 
 
-    def _set_angular_torque(self, cmd):
-        commandVectorArray = c_float * TORQUE_COMMAND_SIZE
+    def _set_angular_torque(self, req):
+        commandVectorArray = c_float * 6
         torqueCommand = commandVectorArray(0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
-        torqueCommand[0] = cmd.joint1
-        torqueCommand[1] = cmd.joint2
-        torqueCommand[2] = cmd.joint3
-        torqueCommand[3] = cmd.joint4
-        torqueCommand[4] = cmd.joint5
-        torqueCommand[5] = cmd.joint6
+        rospy.loginfo("INFO: Setting angular torque")
+        torqueCommand[0] = req.joint1
+        torqueCommand[1] = req.joint2
+        torqueCommand[2] = req.joint3
+        torqueCommand[3] = req.joint4
+        torqueCommand[4] = req.joint5
+        torqueCommand[5] = req.joint6
         self.api.send_angular_torque_command(torqueCommand)
 
         
