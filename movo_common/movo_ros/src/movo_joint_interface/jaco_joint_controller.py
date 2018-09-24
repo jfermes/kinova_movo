@@ -37,7 +37,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 from ctypes import *
 import rospy
 from movo_msgs.msg import JacoCartesianVelocityCmd,KinovaActuatorFdbk,JointTorque
-from movo_msgs.srv import GravityVector, SetTorqueControlMode, SwitchTrajectoryTorque, SafetyFactor, TorqueActuatorDamping, TorqueZero, MaxTorque, GravityVectorResponse, SetTorqueControlModeResponse, SwitchTrajectoryTorqueResponse, SafetyFactorResponse, TorqueActuatorDampingResponse, TorqueZeroResponse, MaxTorqueResponse
+from movo_msgs.srv import GravityVector, SetTorqueControlMode, SwitchTrajectoryTorque, SafetyFactor, TorqueActuatorDamping, TorqueZero, MaxTorque, GravityVectorResponse, SetTorqueControlModeResponse, SwitchTrajectoryTorqueResponse, SafetyFactorResponse, TorqueActuatorDampingResponse, TorqueZeroResponse, MaxTorqueResponse, Chat, ChatResponse
 from sensor_msgs.msg import JointState
 from control_msgs.msg import JointTrajectoryControllerState
 from std_msgs.msg import Float32
@@ -181,7 +181,10 @@ class SIArmController(object):
 
         """
         Register the services for torque control
+
         """
+
+        print "Registering services and topics!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
 
         self._gravity_srv = rospy.Service('/movo/%s_arm/set_gravity'%self._prefix, GravityVector, self._set_gravity_srv)
         #0: Angular, 1: Cartesian, 2: Torque
@@ -193,6 +196,9 @@ class SIArmController(object):
         self._torque_zero_srv = rospy.Service('/movo/set_torque_zero', TorqueZero, self._set_torque_zero_srv)
         self._torque_max_srv = rospy.Service('/movo/set_max_torque', MaxTorque, self._set_max_torque_srv)
 
+        self._chat_srv = rospy.Service('/movo/chat', Chat, self._chatter_srv)
+
+
 
         
 
@@ -200,7 +206,7 @@ class SIArmController(object):
         """
         Register subscribers for torque control
         """
-        self._torque_cmd_sub = rospy.Subscriber("/movo/%s_arm/joint_torque_cmd"%self._prefix,JointTorque,self._set_angular_torque)
+        self._torque_cmd_sub = rospy.Subscriber("/movo/%s_arm/joint_torque_cmd"%self._prefix,JointTorque,self._set_angular_torque, queue_size=10)
 
 
 
@@ -277,8 +283,15 @@ class SIArmController(object):
         #print "Setting gravity vector to [%s , %s, %s]"%(req.x, req.y, req.z)
         gravityVectorArray = c_float * 3
         gravityVector = gravityVectorArray(req.x, req.y, req.z)
+        rospy.loginfo("INFO: Gravity vector is %s, %s, %s"%(req.x, req.y, req.z) )
         self.api.set_gravity_vector(gravityVector)
         return GravityVectorResponse()
+
+    def _chatter_srv(self, req):
+        print "Client says %s"%(req.hello)
+        rospy.loginfo("CLient says hola")
+        resp = "bye bye"
+        return ChatResponse(resp)
 
 
     def _set_control_mode_srv(self, req):
@@ -293,18 +306,19 @@ class SIArmController(object):
 
     def _switch_trajectory_troque_srv(self, req):
         if(req.state < 0 or req.state > 1):
-            print "0: Trajectory, 1: Torque"
-            return SwitchTrajectoryTorqueResponse()
+            rospy.loginfo("0: Trajectory, 1: Torque")
         else:
             self.api.switch_trajectory_torque(req.state)
         return SwitchTrajectoryTorqueResponse()
 
     def _set_safety_factor_srv(self, req):
-        if(req.factor < 0 or req.factor > 1):
-            print "Safety factor must be between 0 and 1"
-            return SafetyFactorResponse()
+        factor = c_float(req.factor)
+        rospy.loginfo("Safety factor is %s"%(factor))
+        if(factor < 0 or factor > 1):
+            rospy.loginfo("INFO: Safety factor must be between 0 and 1" )
         else:
-            self.api.set_torque_safety_factor(req.factor)
+            rospy.loginfo("Setting safety factor")
+            self.api.set_torque_safety_factor(factor)
         return SafetyFactorResponse()
 
     def _set_torque_actuator_damping_srv(self, req):
