@@ -36,7 +36,9 @@ add_service_files(
  TorqueActuatorDamping.srv
  TorqueZero.srv
  MaxTorque.srv
- Chat.srv)
+ Chat.srv
+ ForceControl.srv
+ TorqueControlType.srv)
 
 generate_messages(DEPENDENCIES std_msgs geometry_msgs)
 catkin_package(CATKIN_DEPENDS message_runtime std_msgs geometry_msgs)

@@ -39,6 +39,7 @@ from ctypes import *
 from helpers import dottedQuadToNum,get_ip_address
 from angles import deg_to_rad, rad_to_deg
 import rospy
+import time
 
 class KinovaDevice(Structure):
     _fields_=[("SerialNumber",c_char*20),
@@ -166,13 +167,18 @@ class GENERALCONTROL_TYPE(Enum):
 	TORQUE = 1
 
 from enum import Enum
-class ACTUATOR_ADDRESS(Enum):
-	A1 = 16
-	A2 = 17
-	A3 = 18
-	A4 = 19
-	A5 = 20
-	A6 = 21		
+class TORQUECONTROL_TYPE(Enum):
+    DIRECTTORQUE = 1 
+    IMPEDANCEANGULAR = 2
+    IMPEDANCECARTESIAN = 3
+
+
+A1 = 16
+A2 = 17
+A3 = 18
+A4 = 19
+A5 = 20
+A6 = 21		
 
 
 class KinovaAPI(object):
@@ -233,6 +239,9 @@ class KinovaAPI(object):
         self.SetTorqueCommandMax = self.kinova.Ethernet_SetTorqueCommandMax
         self.SetTorqueCommandMax.arg_types = [POINTER(c_float)]
         self.StartForceControl = self.kinova.Ethernet_StartForceControl
+        self.StopForceControl = self.kinova.Ethernet_StopForceControl
+        self.SetTorqueControlType = self.kinova. Ethernet_SetTorqueControlType
+        self.SetTorqueControlType.arg_types = [TORQUECONTROL_TYPE]
 
         #argtypes or arg_types?
 
@@ -381,9 +390,22 @@ class KinovaAPI(object):
     		self.SwitchTrajectoryTorque(GENERALCONTROL_TYPE.POSITION.value)
     		rospy.loginfo("INFO: Switch to Trajectory Control")	
     	else:
-            self.StartForceControl()
-    		#self.SwitchTrajectoryTorque(GENERALCONTROL_TYPE.TORQUE.value)
-    		#rospy.loginfo("INFO: Switch to Torque Control")
+    		self.SwitchTrajectoryTorque(GENERALCONTROL_TYPE.TORQUE.value)
+
+    def set_torque_control_type(self, mode):
+        rospy.loginfo("INFO: Torque control Type is %s"%(mode))
+        if(TORQUECONTROL_TYPE.DIRECTTORQUE.value == mode):
+            self.SetTorqueControlType(TORQUECONTROL_TYPE.DIRECTTORQUE.value)
+        elif(TORQUECONTROL_TYPE.IMPEDANCEANGULAR.value == mode):
+            self.SetTorqueControlType(TORQUECONTROL_TYPE.IMPEDANCEANGULAR.value)
+        else:
+            self.SetTorqueControlType(TORQUECONTROL_TYPE.IMPEDANCECARTESIAN.value)
+
+    def start_force_control(self):
+        self.StartForceControl()
+
+    def stop_force_control(self):
+        self.StopForceControl()    
 
     def set_torque_command_max(sef, cmd):
     	torqueCommandMaxArray = c_float * TORQUE_COMMAND_SIZE
@@ -403,12 +425,13 @@ class KinovaAPI(object):
 
 
     def set_torque_zero(self, ActuatorAddress):
-    	if(ActuatorAddress != ACTUATOR_ADDRESS.A1 or ActuatorAddress != ACTUATOR_ADDRESS.A2 or ActuatorAddress != ACTUATOR_ADDRESS.A3 or ActuatorAddress != ACTUATOR_ADDRESS.A4 or ActuatorAddress != ACTUATOR_ADDRESS.A5 or ActuatorAddress != ACTUATOR_ADDRESS.A6):
-    		print "Actuator Address does not correspond with any valid actuator"
-    		return
-    	else:
+        rospy.loginfo("INFO: Actuator address is %s"%(ActuatorAddress))
+    	if(ActuatorAddress == A1 or ActuatorAddress == A2 or ActuatorAddress == A3 or ActuatorAddress == A4 or ActuatorAddress == A5 or ActuatorAddress == A6):
     		self.SetTorqueZero(ActuatorAddress)
-
+    	else:
+            rospy.loginfo("Actuator address does not correspond with any valid actuator: %s, %s, %s, %s, %s, %s"%(A1, A2, A3, A4, A5, A6))
+    		
+    """
     def send_angular_torque_command(self, cmds):
     	commandVectorArray = c_float * TORQUE_COMMAND_SIZE
         torqueCommand = commandVectorArray(0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
@@ -424,6 +447,25 @@ class KinovaAPI(object):
         else:
             rospy.loginfo("Kinova API failed: GetAngularPosition (%d)",api_stat)
 
+    """
+
+    def send_angular_torque_command(self, cmds):
+        commandVectorArray = c_float * TORQUE_COMMAND_SIZE
+        torqueCommand = commandVectorArray(0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
+
+        for x in range(200):
+            torqueCommand[0] = cmds[0]
+            torqueCommand[1] = cmds[1]
+            torqueCommand[2] = cmds[2]
+            torqueCommand[3] = cmds[3]
+            torqueCommand[4] = cmds[4]
+            torqueCommand[5] = cmds[5]
+            api_stat = self.SendAngularTorqueCommand(torqueCommand)
+            if ( NO_ERROR_KINOVA == api_stat):
+                rospy.loginfo("INFO: Torques are %s, %s, %s, %s, %s, %s "%(torqueCommand[0],torqueCommand[1],torqueCommand[2],torqueCommand[3],torqueCommand[4],torqueCommand[5]))
+            else:
+                rospy.loginfo("Kinova API failed: GetAngularPosition (%d)",api_stat)
+            time.sleep(0.01)    
     
     def get_angular_position(self):
         pos = AngularPosition()
