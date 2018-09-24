@@ -37,7 +37,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 from ctypes import *
 import rospy
 from movo_msgs.msg import JacoCartesianVelocityCmd,KinovaActuatorFdbk,JointTorque, CartesianForce
-from movo_msgs.srv import GravityVector, SetTorqueControlMode, SwitchTrajectoryTorque, SafetyFactor, TorqueActuatorDamping, TorqueZero, MaxTorque, GravityVectorResponse, SetTorqueControlModeResponse, SwitchTrajectoryTorqueResponse, SafetyFactorResponse, TorqueActuatorDampingResponse, TorqueZeroResponse, MaxTorqueResponse, Chat, ChatResponse, ForceControl, ForceControlResponse, TorqueControlType, TorqueControlTypeResponse
+from movo_msgs.srv import GravityVector, SetTorqueControlMode, SwitchTrajectoryTorque, SafetyFactor, TorqueActuatorDamping, TorqueZero, MaxTorque, GravityVectorResponse, SetTorqueControlModeResponse, SwitchTrajectoryTorqueResponse, SafetyFactorResponse, TorqueActuatorDampingResponse, TorqueZeroResponse, MaxTorqueResponse, Chat, ChatResponse, ForceControl, ForceControlResponse, TorqueControlType, TorqueControlTypeResponse, GetTrajectoryTorqueMode, GetTrajectoryTorqueModeResponse, GetControlType, GetControlTypeResponse
 from sensor_msgs.msg import JointState
 from control_msgs.msg import JointTrajectoryControllerState
 from std_msgs.msg import Float32
@@ -106,7 +106,8 @@ class SIArmController(object):
             self.Stop()
             return
         
-        self.api.SetCartesianControl()
+        #self.api.SetCartesianControl()
+        self.api.set_control_mode(2)
         self._position_hold = False
         self.estop = False
         
@@ -197,7 +198,13 @@ class SIArmController(object):
         self._torque_max_srv = rospy.Service('/movo/%s_amr/set_max_torque'%self._prefix, MaxTorque, self._set_max_torque_srv)
         self._force_control_srv = rospy.Service('/movo/%s_arm/start_stop_force_control'%self._prefix, ForceControl, self._start_stop_force_control_srv)
         self._torque_control_type_srv = rospy.Service('/movo/%s_arm/set_torque_control_type'%self._prefix, TorqueControlType, self._set_torque_control_type_srv)
+        self._get_mode_srv = rospy.Service('/movo/%s_arm/get_trajectory_torque_mode'%self._prefix, GetTrajectoryTorqueMode, self._get_trajectory_torque_mode_srv)
+        self._get_control_srv = rospy.Service('/movo/%s_arm/get_control_type'%self._prefix, GetControlType, self._get_control_type_srv)
 
+
+        self._control_type_srv2 = rospy.Service('/movo/switch_trajectory_torque', SwitchTrajectoryTorque, self._switch_trajectory_troque_srv)
+
+        self._get_mode_srv2 = rospy.Service('/movo/get_trajectory_torque_mode', GetTrajectoryTorqueMode, self._get_trajectory_torque_mode_srv)
 
 
 
@@ -386,6 +393,14 @@ class SIArmController(object):
         cartesianTorqueCommand[5] = data.joint6
         self.api.send_cartesian_force_command(cartesianTorqueCommand)
 
+    def _get_trajectory_torque_mode_srv(self, req):
+        resp = self.api.get_trajectory_torque_mode()
+        return GetTrajectoryTorqueModeResponse(resp)
+
+    def _get_control_type_srv(self, req):
+        resp = self.api.get_control_type()
+        return GetControlTypeResponse(resp) 
+
         
     def _init_ext_joint_position_control(self):    
         """
@@ -421,7 +436,7 @@ class SIArmController(object):
         with self._lock:
             self.api.update_cartesian_vel_cmd([cmds.x,cmds.y,cmds.z,cmds.theta_x,cmds.theta_y,cmds.theta_z,self._gripper_cmd])
             if (self._ctl_mode != TELEOP_CONTROL):
-                self.api.set_control_mode(TELEOP_CONTROL)
+                #self.api.set_control_mode(TELEOP_CONTROL)
                 self._ctl_mode = TELEOP_CONTROL
             self.last_teleop_cmd_update = rospy.get_time()
             
@@ -635,7 +650,7 @@ class SIArmController(object):
                 self._init_ext_joint_position_control()
                 self._init_ext_gripper_control()
                 if ((rospy.get_time() - self.last_teleop_cmd_update) >= 1.0):
-                    self.api.set_control_mode(AUTONOMOUS_CONTROL)
+                    #self.api.set_control_mode(AUTONOMOUS_CONTROL)
                     self._ctl_mode = AUTONOMOUS_CONTROL
                     return
                 

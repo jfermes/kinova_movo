@@ -39,7 +39,9 @@ add_service_files(
  MaxTorque.srv
  Chat.srv
  ForceControl.srv
- TorqueControlType.srv)
+ TorqueControlType.srv
+ GetTrajectoryTorqueMode.srv
+ GetControlType.srv)
 
 generate_messages(DEPENDENCIES std_msgs geometry_msgs)
 catkin_package(CATKIN_DEPENDS message_runtime std_msgs geometry_msgs)

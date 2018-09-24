@@ -244,6 +244,12 @@ class KinovaAPI(object):
         self.SetTorqueControlType.arg_types = [TORQUECONTROL_TYPE]
         self.SendCartesianForceCommand = self.kinova. Ethernet_SendCartesianForceCommand
         self.SendCartesianForceCommand.arg_types = [POINTER(c_float)]
+        self.GetTrajectoryTorqueMode = self.kinova.Ethernet_GetTrajectoryTorqueMode
+        self.GetTrajectoryTorqueMode.arg_types = [POINTER(c_int)]
+        self.GetControlType = self.kinova.Ethernet_GetControlType
+        self.GetControlType.argtypes = [POINTER(c_int)]
+
+        #IntArray5 = c_int * 5
 
         #argtypes or arg_types?
 
@@ -287,7 +293,7 @@ class KinovaAPI(object):
         Try and set the active device, the API version not matching is usually why this fails
         """
         result = self.SetActiveDevice(self._arm)
-        result &= self.SetCartesianControl()
+        #result &= self.SetCartesianControl()
         if not (NO_ERROR_KINOVA == result):
             rospy.logerr("Could not set %s arm active...stopping the driver"%self._prefix)
             rospy.logerr("Set Active Device result:   %d"%result) 
@@ -314,7 +320,7 @@ class KinovaAPI(object):
         elif (TORQUE_CONTROL == mode):
         	gravityVectorArray = c_float * 3
         	gravityVector = gravityVectorArray(0.0, -9.81, 0.0)
-        	self.SetGravityVector(byref(gravityVector)) #Set the gravity vector
+        	self.SetGravityVector(gravityVector) #Set the gravity vector
         	self.SwitchTrajectoryTorque(GENERALCONTROL_TYPE.TORQUE.value) #Switch to torque control
 
     def set_torque_safety_factor(self, factor):
@@ -390,10 +396,30 @@ class KinovaAPI(object):
 
     def switch_trajectory_torque(self, mode):
     	if (GENERALCONTROL_TYPE.POSITION.value == mode):
-    		self.SwitchTrajectoryTorque(GENERALCONTROL_TYPE.POSITION.value)
-    		rospy.loginfo("INFO: Switch to Trajectory Control")	
+            self.SwitchTrajectoryTorque(GENERALCONTROL_TYPE.POSITION.value)
+            rospy.loginfo("INFO: Switch to Trajectory Control")
+            self.test_torque()
+            which_mode = c_int(5)
+            res_mode1 = self.GetTrajectoryTorqueMode(byref(which_mode))
+            rospy.loginfo("MODE: %s"%(which_mode.value))
     	else:
-    		self.SwitchTrajectoryTorque(GENERALCONTROL_TYPE.TORQUE.value)
+            api_stat = self.SwitchTrajectoryTorque(GENERALCONTROL_TYPE.TORQUE.value)
+            rospy.loginfo("API_STAT %s"%(api_stat))
+            rospy.loginfo("INFO: Switch to Torque Control")
+            which_mode2 = c_int(5)
+            res_mode2 = self.GetTrajectoryTorqueMode(byref(which_mode2))
+            rospy.loginfo("MODE: %s"%(which_mode2.value))
+
+    def get_trajectory_torque_mode(self):
+        mode = c_int(0)
+        self.GetTrajectoryTorqueMode(byref(mode))
+        return mode.value
+
+    def get_control_type(self):
+        mode = c_int(0)
+        self.GetControlType(byref(mode))
+        return mode.value    
+                
 
     def set_torque_control_type(self, mode):
         rospy.loginfo("INFO: Torque control Type is %s"%(mode))
@@ -464,7 +490,8 @@ class KinovaAPI(object):
             torqueCommand[3] = cmds[3]
             torqueCommand[4] = cmds[4]
             torqueCommand[5] = cmds[5]
-            api_stat = self.SendAngularTorqueCommand(torqueCommand)
+            api_stat = self.SendAngularTorqueCommand(byref(torqueCommand))
+            rospy.loginfo("API STAT %s"%(api_stat))
             if ( NO_ERROR_KINOVA == api_stat):
                 rospy.loginfo("INFO: Torques are %s, %s, %s, %s, %s, %s "%(torqueCommand[0],torqueCommand[1],torqueCommand[2],torqueCommand[3],torqueCommand[4],torqueCommand[5]))
             else:
@@ -487,6 +514,39 @@ class KinovaAPI(object):
             else:
                 rospy.loginfo("Kinova API failed: Send Cartesian Force Commands (%d)",api_stat)
             time.sleep(0.01)
+
+
+    def test_torque(self):
+        gravityVectorArray = c_float * 3
+        gravityVector = gravityVectorArray(0.0, -9.81, 0.0)
+        self.SetGravityVector(byref(gravityVector)) #Set the gravity vector
+        self.SetTorqueZero(16)
+        self.SetTorqueZero(17)
+        self.SetTorqueZero(18)
+        self.SetTorqueZero(19)
+        self.SetTorqueZero(10)
+        self.SetTorqueZero(21)
+        self.SetTorqueControlType(TORQUECONTROL_TYPE.DIRECTTORQUE.value)
+        safety_factor = c_float(0.6)
+        self.SetTorqueSafetyFactor(byref(safety_factor))
+        self.SwitchTrajectoryTorque(GENERALCONTROL_TYPE.TORQUE.value) #Switch to torque control
+        commandVectorArray = c_float * TORQUE_COMMAND_SIZE
+        torqueCommand = commandVectorArray(0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
+        for x in range(200):
+            torqueCommand[5] = 0.9
+            torqueCommand[4] = 0.9
+            api_stat = self.SendAngularTorqueCommand(byref(torqueCommand))
+            time.sleep(0.02)
+        time.sleep(2)
+        commandVectorArray = c_float * TORQUE_COMMAND_SIZE
+        cartesianForceCommand = commandVectorArray(0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
+        for x in range(200):
+            cartesianForceCommand[1] = -3
+            api_stat = self.SendCartesianForceCommand(byref(cartesianForceCommand))
+            time.sleep(0.02)
+        time.sleep(2)
+        self.SwitchTrajectoryTorque(GENERALCONTROL_TYPE.POSITION.value)
+                
 
     
     def get_angular_position(self):
