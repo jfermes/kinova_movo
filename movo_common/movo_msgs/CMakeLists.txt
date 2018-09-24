@@ -24,7 +24,8 @@ add_message_files(DIRECTORY msg FILES
                                 PVA.msg
                                 PanTiltCmd.msg
                                 PanTiltFdbk.msg
-				JointTorque.msg)
+				JointTorque.msg
+				CartesianForce.msg)
 
 
 add_service_files(

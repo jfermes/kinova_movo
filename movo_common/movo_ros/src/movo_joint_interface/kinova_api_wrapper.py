@@ -242,6 +242,8 @@ class KinovaAPI(object):
         self.StopForceControl = self.kinova.Ethernet_StopForceControl
         self.SetTorqueControlType = self.kinova. Ethernet_SetTorqueControlType
         self.SetTorqueControlType.arg_types = [TORQUECONTROL_TYPE]
+        self.SendCartesianForceCommand = self.kinova. Ethernet_SendCartesianForceCommand
+        self.SendCartesianForceCommand.arg_types = [POINTER(c_float)]
 
         #argtypes or arg_types?
 
@@ -317,7 +319,8 @@ class KinovaAPI(object):
 
     def set_torque_safety_factor(self, factor):
         rospy.loginfo("INFO: Set torque safety factor")
-    	self.SetTorqueSafetyFactor(factor)
+        safety_factor = c_float(factor)
+    	self.SetTorqueSafetyFactor(safety_factor)
         print "INFO: Set torque safety factor"
 
     def set_torque_actuator_damping(self, dampingVector):
@@ -427,7 +430,8 @@ class KinovaAPI(object):
     def set_torque_zero(self, ActuatorAddress):
         rospy.loginfo("INFO: Actuator address is %s"%(ActuatorAddress))
     	if(ActuatorAddress == A1 or ActuatorAddress == A2 or ActuatorAddress == A3 or ActuatorAddress == A4 or ActuatorAddress == A5 or ActuatorAddress == A6):
-    		self.SetTorqueZero(ActuatorAddress)
+            rospy.loginfo("INFO: Setting torque zero for actuator address %s"%ActuatorAddress)
+            self.SetTorqueZero(ActuatorAddress)
     	else:
             rospy.loginfo("Actuator address does not correspond with any valid actuator: %s, %s, %s, %s, %s, %s"%(A1, A2, A3, A4, A5, A6))
     		
@@ -464,8 +468,26 @@ class KinovaAPI(object):
             if ( NO_ERROR_KINOVA == api_stat):
                 rospy.loginfo("INFO: Torques are %s, %s, %s, %s, %s, %s "%(torqueCommand[0],torqueCommand[1],torqueCommand[2],torqueCommand[3],torqueCommand[4],torqueCommand[5]))
             else:
-                rospy.loginfo("Kinova API failed: GetAngularPosition (%d)",api_stat)
-            time.sleep(0.01)    
+                rospy.loginfo("Kinova API failed: Send Angular Torque COmmands (%d)",api_stat)
+            time.sleep(0.01)
+
+    def send_cartesian_force_command(self, cmds):
+        commandVectorArray = c_float * TORQUE_COMMAND_SIZE
+        cartesianForceCommand = commandVectorArray(0.0, 0.0, 0.0, 0.0, 0.0, 0.0) 
+        for x in range(200):
+            cartesianForceCommand[0] = cmds[0]
+            cartesianForceCommand[1] = cmds[1]
+            cartesianForceCommand[2] = cmds[2]
+            cartesianForceCommand[3] = cmds[3]
+            cartesianForceCommand[4] = cmds[4]
+            cartesianForceCommand[5] = cmds[5]
+            api_stat = self.SendCartesianForceCommand(cartesianForceCommand)
+            if ( NO_ERROR_KINOVA == api_stat):
+                rospy.loginfo("INFO: Forces are %s, %s, %s, %s, %s, %s "%(cartesianForceCommand[0],cartesianForceCommand[1],cartesianForceCommand[2],cartesianForceCommand[3],cartesianForceCommand[4],cartesianForceCommand[5]))
+            else:
+                rospy.loginfo("Kinova API failed: Send Cartesian Force Commands (%d)",api_stat)
+            time.sleep(0.01)
+
     
     def get_angular_position(self):
         pos = AngularPosition()

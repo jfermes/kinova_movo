@@ -36,7 +36,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 --------------------------------------------------------------------"""
 from ctypes import *
 import rospy
-from movo_msgs.msg import JacoCartesianVelocityCmd,KinovaActuatorFdbk,JointTorque
+from movo_msgs.msg import JacoCartesianVelocityCmd,KinovaActuatorFdbk,JointTorque, CartesianForce
 from movo_msgs.srv import GravityVector, SetTorqueControlMode, SwitchTrajectoryTorque, SafetyFactor, TorqueActuatorDamping, TorqueZero, MaxTorque, GravityVectorResponse, SetTorqueControlModeResponse, SwitchTrajectoryTorqueResponse, SafetyFactorResponse, TorqueActuatorDampingResponse, TorqueZeroResponse, MaxTorqueResponse, Chat, ChatResponse, ForceControl, ForceControlResponse, TorqueControlType, TorqueControlTypeResponse
 from sensor_msgs.msg import JointState
 from control_msgs.msg import JointTrajectoryControllerState
@@ -200,6 +200,8 @@ class SIArmController(object):
 
 
 
+
+
         self._chat_srv = rospy.Service('/movo/chat', Chat, self._chatter_srv)
 
 
@@ -211,6 +213,8 @@ class SIArmController(object):
         Register subscribers for torque control
         """
         self._torque_cmd_sub = rospy.Subscriber("/movo/%s_arm/joint_torque_cmd"%self._prefix,JointTorque,self._set_angular_torque, queue_size=10)
+        self._cartesian_torque_cmd_sub = rospy.Subscriber('/movo/%s_arm/cartesian_torque_cmd'%self._prefix, CartesianForce, self._send_cartesian_force_command, queue_size=10)
+
 
 
 
@@ -358,17 +362,29 @@ class SIArmController(object):
         return MaxTorqueResponse()
 
 
-    def _set_angular_torque(self, req):
+    def _set_angular_torque(self, data):
         commandVectorArray = c_float * 6
         torqueCommand = commandVectorArray(0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
         rospy.loginfo("INFO: Setting angular torque")
-        torqueCommand[0] = req.joint1
-        torqueCommand[1] = req.joint2
-        torqueCommand[2] = req.joint3
-        torqueCommand[3] = req.joint4
-        torqueCommand[4] = req.joint5
-        torqueCommand[5] = req.joint6
+        torqueCommand[0] = data.joint1
+        torqueCommand[1] = data.joint2
+        torqueCommand[2] = data.joint3
+        torqueCommand[3] = data.joint4
+        torqueCommand[4] = data.joint5
+        torqueCommand[5] = data.joint6
         self.api.send_angular_torque_command(torqueCommand)
+
+    def _send_cartesian_force_command(self, data):
+        commandVectorArray = c_float * 6
+        cartesianTorqueCommand = commandVectorArray(0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
+        rospy.loginfo("INFO: Setting cartesian force command")
+        cartesianTorqueCommand[0] = data.joint1
+        cartesianTorqueCommand[1] = data.joint2
+        cartesianTorqueCommand[2] = data.joint3
+        cartesianTorqueCommand[3] = data.joint4
+        cartesianTorqueCommand[4] = data.joint5
+        cartesianTorqueCommand[5] = data.joint6
+        self.api.send_cartesian_force_command(cartesianTorqueCommand)
 
         
     def _init_ext_joint_position_control(self):    
