@@ -107,7 +107,7 @@ class SIArmController(object):
             return
         
         #self.api.SetCartesianControl()
-        self.api.set_control_mode(2)
+        self.api.SetAngularControl()
         self._position_hold = False
         self.estop = False
         
@@ -210,10 +210,6 @@ class SIArmController(object):
 
 
         self._chat_srv = rospy.Service('/movo/chat', Chat, self._chatter_srv)
-
-
-
-        
 
 
         """

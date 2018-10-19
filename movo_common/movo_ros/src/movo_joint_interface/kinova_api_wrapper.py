@@ -38,6 +38,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 from ctypes import *
 from helpers import dottedQuadToNum,get_ip_address
 from angles import deg_to_rad, rad_to_deg
+from movo_action_clients.jaco_action_client import JacoActionClient
+from moveit_python import MoveGroupInterface, PlanningSceneInterface
+import moveit_commander
+import moveit_msgs.msg
+import geometry_msgs.msg
 import rospy
 import time
 
@@ -319,7 +324,7 @@ class KinovaAPI(object):
             self.SetCartesianControl()
         elif (TORQUE_CONTROL == mode):
         	gravityVectorArray = c_float * 3
-        	gravityVector = gravityVectorArray(0.0, -9.81, 0.0)
+        	gravityVector = gravityVectorArray(0.0, 9.81, 0.0)
         	self.SetGravityVector(gravityVector) #Set the gravity vector
         	self.SwitchTrajectoryTorque(GENERALCONTROL_TYPE.TORQUE.value) #Switch to torque control
 
@@ -397,18 +402,25 @@ class KinovaAPI(object):
     def switch_trajectory_torque(self, mode):
     	if (GENERALCONTROL_TYPE.POSITION.value == mode):
             self.SwitchTrajectoryTorque(GENERALCONTROL_TYPE.POSITION.value)
-            rospy.loginfo("INFO: Switch to Trajectory Control")
-            self.test_torque()
-            which_mode = c_int(5)
-            res_mode1 = self.GetTrajectoryTorqueMode(byref(which_mode))
-            rospy.loginfo("MODE: %s"%(which_mode.value))
     	else:
             api_stat = self.SwitchTrajectoryTorque(GENERALCONTROL_TYPE.TORQUE.value)
-            rospy.loginfo("API_STAT %s"%(api_stat))
-            rospy.loginfo("INFO: Switch to Torque Control")
-            which_mode2 = c_int(5)
-            res_mode2 = self.GetTrajectoryTorqueMode(byref(which_mode2))
-            rospy.loginfo("MODE: %s"%(which_mode2.value))
+
+
+    def zero_torque_pose(self):
+    	robot = moveit_commander.RobotCommander()
+        scene = moveit_commander.PlanningSceneInterface()
+        group = moveit_commander.MoveGroupCommander("right_arm")
+        group_variable_values = group.get_current_joint_values()
+        group_variable_values[0] = 0.0
+        group_variable_values[1] = 3.1416
+        group_variable_values[2] = 3.1416
+        group_variable_values[3] = 3.1416
+        group_variable_values[4] = 3.1416
+        group_variable_values[5] = 3.1416
+		group.set_joint_value_target(group_variable_values)
+		group.go(wait=True)
+
+
 
     def get_trajectory_torque_mode(self):
         mode = c_int(0)
